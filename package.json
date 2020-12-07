@@ -1,0 +1,15 @@
+{
+  "name": "privatenet",
+  "version": "1.0.0",
+  "description": "",
+  "main": "lookup.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node lookup.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
