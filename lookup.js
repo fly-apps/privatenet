@@ -33,7 +33,7 @@ async function getAllInstances(appname) {
 async function getRegionInstances(region, appname) {
     try {
         options={ all: true }
-        records = await dns.promises.lookup(`${region}.${appname}.internal`,options)
+        records = await dns.promises.resolve6(`${region}.${appname}.internal`,options)
     } catch (error) {
         console.log(error);
         return { "error": error }
