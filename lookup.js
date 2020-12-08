@@ -1,12 +1,26 @@
 const dns = require("dns")
 const express = require('express');
-const app = express();
+const expressapp = express();
 const port = 8080;
 
 
 console.log("Just looking up private networking");
 
-async function getRegions(appname) {
+async function getApps() {
+    try {
+        records = await dns.promises.resolveTxt(`privatenet.internal`)
+    } catch (error) {
+        console.log(error);
+        return { "error": error }
+    }
+
+    appset = records[0][0]
+    if (appset == "") return [];
+
+    return appset.split(",");
+};
+
+async function getAppRegions(appname) {
     try {
         records = await dns.promises.resolveTxt(`regions.${appname}.internal`)
     } catch (error) {
@@ -14,21 +28,12 @@ async function getRegions(appname) {
         return { "error": error }
     }
 
-    regionset = records[0][0]
-    if (regionset == "") return [];
+    appset = records[0][0]
+    if (appset == "") return [];
 
-    return regionset.split(",");
+    return appset.split(",");
 };
 
-async function getAllInstances(appname) {
-    try {
-        records = await dns.promises.resolve6(`global.${appname}.internal`)
-    } catch (error) {
-        console.log(error);
-        return { "error": error }
-    }
-    return records;
-};
 
 async function getRegionInstances(region, appname) {
     try {
@@ -41,16 +46,33 @@ async function getRegionInstances(region, appname) {
     return records;
 };
 
-app.get('/', async function (req, res) {
-    allregions = await getRegions("privatenet");
-    regions = [];
-    for (r of allregions) {
-        regions.push(await getRegionInstances(r, "privatenet"));
+async function getAllInstances(appname) {
+    try {
+        records = await dns.promises.resolve6(`global.${appname}.internal`)
+    } catch (error) {
+        console.log(error);
+        return { "error": error }
     }
-    global = await getAllInstances("privatenet");
-    res.json({ "allregions": allregions, "regions": regions, "global": global });
+    return records;
+};
+
+expressapp.get('/', async function (req, res) {
+    results=[];
+    apps=await getApps();
+    results.push({allapps:apps});
+    for (app of apps) {
+        appregions = await getAppRegions(app);
+        appinstances = await getAllInstances(app);
+        regioninstances = [];
+        for (region of appregions) {
+          instances=await getRegionInstances(region, app)
+          regioninstances.push({ [region]: instances });
+        }
+        results.push({ [app]: {"appregions":appregions,"appinstances":appinstances,"regioninstances":regioninstances}})
+    }
+    res.json(results);
 })
 
-app.listen(port, () => {
+expressapp.listen(port, () => {
     console.log(`6PN Private Net Helper app listening at http://localhost:${port}`)
 })
