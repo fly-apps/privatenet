@@ -8,7 +8,7 @@ console.log("Just looking up private networking");
 
 async function getApps() {
     try {
-        records = await dns.promises.resolveTxt(`privatenet.internal`)
+        records = await dns.promises.resolveTxt(`_apps.internal`)
     } catch (error) {
         console.log(error);
         return { "error": error }
